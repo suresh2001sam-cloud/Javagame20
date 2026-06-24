@@ -1,318 +1,454 @@
 
 <style>
-  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
-  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.18)} 100%{transform:scale(1)} }
-  @keyframes star-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-  @keyframes fade-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+*{box-sizing:border-box;margin:0;padding:0}
+@keyframes floatUp{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes popIn{0%{transform:scale(0.5);opacity:0}70%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0) rotate(0)}20%{transform:translateX(-8px) rotate(-4deg)}40%{transform:translateX(8px) rotate(4deg)}60%{transform:translateX(-6px) rotate(-2deg)}80%{transform:translateX(6px) rotate(2deg)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(180px) rotate(720deg);opacity:0}}
+@keyframes heartBeat{0%,100%{transform:scale(1)}30%{transform:scale(1.25)}60%{transform:scale(0.95)}}
+@keyframes slideIn{from{opacity:0;transform:translateY(-16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 0 rgba(255,180,50,0.5)}50%{box-shadow:0 0 0 8px rgba(255,180,50,0)}}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+.game{
+  background:#1a0a2e;
+  border-radius:24px;
+  padding:28px 20px 32px;
+  display:flex;flex-direction:column;align-items:center;gap:16px;
+  position:relative;overflow:hidden;min-height:640px;
+}
 
-  body, .game-root { font-family: var(--font-sans); }
+.bg-orbs{position:absolute;inset:0;pointer-events:none;z-index:0}
 
-  .game-root {
-    min-height: 520px;
-    background: linear-gradient(145deg, #fff4e6 0%, #ffe8cc 60%, #ffd6a5 100%);
-    border-radius: var(--border-radius-lg);
-    padding: 2rem 1.5rem 2.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.2rem;
-    position: relative;
-    overflow: hidden;
-  }
+.title-wrap{z-index:1;text-align:center}
+.game-title{
+  font-size:30px;font-weight:500;
+  background:linear-gradient(135deg,#ff6ec7,#ffb347,#67e8f9);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  letter-spacing:-0.5px;
+}
+.game-sub{font-size:13px;color:#a78bfa;margin-top:4px}
 
-  .bg-stars {
-    position: absolute; inset: 0; pointer-events: none; z-index: 0;
-  }
+.number-track{
+  display:flex;gap:6px;z-index:1;
+}
+.num-cell{
+  width:36px;height:36px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:500;color:#e2d9f3;
+  border:1.5px solid rgba(167,139,250,0.25);
+  background:rgba(255,255,255,0.04);
+  transition:all 0.3s;
+}
+.num-cell.low{background:#2d1b69;border-color:#7c3aed;color:#c4b5fd}
+.num-cell.high{background:#1e3a2f;border-color:#059669;color:#6ee7b7}
+.num-cell.used{background:#3b1a1a;border-color:#dc2626;color:#fca5a5;text-decoration:line-through;opacity:0.6}
 
-  .game-title {
-    font-size: 26px; font-weight: 500;
-    color: #7a3e00;
-    letter-spacing: -0.3px;
-    z-index: 1;
-    text-align: center;
-  }
-  .game-subtitle {
-    font-size: 13px; color: #b06020; z-index: 1; text-align: center; margin-top: -0.7rem;
-  }
+.teddy-stage{
+  width:160px;height:160px;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+  animation:floatUp 3s ease-in-out infinite;
+}
+.teddy-stage.shake{animation:shake 0.5s ease-in-out;animation-fill-mode:forwards}
+.teddy-stage.pop{animation:popIn 0.5s cubic-bezier(.34,1.56,.64,1)}
 
-  .teddy-wrap {
-    z-index: 1;
-    width: 130px; height: 130px;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .teddy-wrap svg { width: 130px; height: 130px; }
-  .teddy-bounce { animation: bounce 1.2s ease-in-out infinite; }
-  .teddy-shake { animation: shake 0.4s ease-in-out 2; }
-  .teddy-pop { animation: pop 0.5s ease-in-out; }
+.speech-bubble{
+  z-index:1;
+  background:#2d1b69;
+  border:1.5px solid #7c3aed;
+  border-radius:16px;
+  padding:10px 18px;
+  font-size:14px;font-weight:500;color:#e2d9f3;
+  text-align:center;
+  position:relative;
+  min-width:220px;
+  animation:slideIn 0.3s ease;
+}
+.speech-bubble::before{
+  content:'';position:absolute;top:-10px;left:50%;transform:translateX(-50%);
+  border:8px solid transparent;border-bottom-color:#7c3aed;border-top:none;
+}
 
-  .hint-badge {
-    background: #fff3cd; border: 1px solid #f5c842;
-    border-radius: 20px; padding: 5px 16px;
-    font-size: 13px; color: #7a5c00; z-index: 1;
-    min-height: 30px; display: flex; align-items: center; justify-content: center;
-    transition: all 0.3s;
-  }
+.input-row{display:flex;gap:10px;align-items:center;z-index:1}
 
-  .controls {
-    display: flex; gap: 10px; align-items: center; z-index: 1;
-  }
+.guess-input{
+  width:76px;height:52px;
+  background:#0f0520;
+  border:2px solid #7c3aed;
+  border-radius:14px;
+  color:#f0e6ff;
+  font-size:26px;font-weight:500;
+  text-align:center;
+  outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+}
+.guess-input:focus{border-color:#c084fc;box-shadow:0 0 0 3px rgba(192,132,252,0.2)}
+.guess-input::-webkit-inner-spin-button,.guess-input::-webkit-outer-spin-button{-webkit-appearance:none}
 
-  .controls input[type=number] {
-    width: 80px; height: 44px; border-radius: 12px;
-    border: 2px solid #e8a050; background: #fff;
-    text-align: center; font-size: 22px; font-weight: 500; color: #7a3e00;
-    outline: none; transition: border-color 0.2s;
-  }
-  .controls input[type=number]:focus { border-color: #c05010; }
-  .controls input[type=number]::-webkit-inner-spin-button,
-  .controls input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+.btn-check{
+  height:52px;padding:0 24px;
+  border-radius:14px;
+  border:none;cursor:pointer;
+  font-size:15px;font-weight:500;
+  color:#1a0a2e;
+  background:#ffb347;
+  transition:all 0.15s;
+  animation:glow 2s ease-in-out infinite;
+}
+.btn-check:hover{background:#ffd080;transform:scale(1.03)}
+.btn-check:active{transform:scale(0.97)}
+.btn-check:disabled{background:#4a3060;color:#7a6090;animation:none;cursor:default}
 
-  .btn-check {
-    height: 44px; padding: 0 22px; border-radius: 12px;
-    background: #d05818; border: none; color: #fff;
-    font-size: 15px; font-weight: 500; cursor: pointer;
-    transition: background 0.15s, transform 0.1s;
-  }
-  .btn-check:hover { background: #b04410; }
-  .btn-check:active { transform: scale(0.97); }
-  .btn-check:disabled { background: #c8a080; cursor: default; }
+.result-banner{
+  z-index:1;
+  min-height:30px;
+  font-size:18px;font-weight:500;
+  text-align:center;
+  animation:slideIn 0.3s ease;
+}
+.result-banner.correct{color:#4ade80}
+.result-banner.wrong{color:#f87171}
+.result-banner.info{color:#a78bfa}
 
-  .result-msg {
-    font-size: 18px; font-weight: 500; z-index: 1;
-    min-height: 26px; text-align: center;
-    animation: fade-in 0.3s ease;
-  }
-  .result-msg.right { color: #2a7a2a; }
-  .result-msg.wrong { color: #b02020; }
-  .result-msg.neutral { color: #7a3e00; }
+.stats-row{display:flex;gap:12px;z-index:1}
+.stat-pill{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(167,139,250,0.2);
+  border-radius:20px;padding:6px 16px;
+  display:flex;align-items:center;gap:6px;
+  font-size:13px;color:#c4b5fd;
+}
+.stat-val{font-size:16px;font-weight:500;color:#f0e6ff}
 
-  .score-row {
-    display: flex; gap: 16px; z-index: 1; align-items: center;
-  }
-  .score-pill {
-    background: #fff3; border: 1.5px solid #e8a050;
-    border-radius: 20px; padding: 4px 18px;
-    font-size: 14px; font-weight: 500; color: #7a3e00;
-  }
-  .hearts { font-size: 18px; letter-spacing: 2px; }
+.lives-bar{display:flex;gap:4px;z-index:1}
+.life-dot{
+  width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+  transition:all 0.3s;
+}
+.life-dot.alive{color:#f87171;animation:heartBeat 1.5s ease-in-out infinite}
+.life-dot.dead{color:#3b1a3b;animation:none}
 
-  .btn-restart {
-    height: 38px; padding: 0 20px; border-radius: 10px;
-    background: transparent; border: 1.5px solid #c05010;
-    color: #c05010; font-size: 14px; cursor: pointer; z-index: 1;
-    transition: all 0.15s;
-  }
-  .btn-restart:hover { background: #c05010; color: #fff; }
+.btn-new{
+  height:38px;padding:0 20px;border-radius:10px;
+  background:transparent;
+  border:1.5px solid rgba(167,139,250,0.4);
+  color:#a78bfa;font-size:13px;cursor:pointer;z-index:1;
+  transition:all 0.2s;
+}
+.btn-new:hover{background:rgba(124,58,237,0.2);border-color:#7c3aed;color:#e2d9f3}
 
-  .game-over-overlay {
-    position: absolute; inset: 0; z-index: 10;
-    background: rgba(250,230,200,0.92);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1rem; border-radius: var(--border-radius-lg);
-    animation: fade-in 0.4s ease;
-  }
-  .game-over-title { font-size: 28px; font-weight: 500; color: #7a3e00; }
-  .game-over-sub { font-size: 15px; color: #b06020; }
+.confetti-piece{
+  position:absolute;width:8px;height:8px;border-radius:2px;
+  pointer-events:none;z-index:5;
+  animation:confettiFall 1.2s ease-in forwards;
+}
 
-  .range-label { font-size: 12px; color: #b06020; z-index: 1; }
+.game-over-wrap{
+  position:absolute;inset:0;z-index:10;
+  background:rgba(10,4,25,0.92);
+  border-radius:24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:16px;
+  animation:slideIn 0.4s ease;
+}
+.go-title{font-size:32px;font-weight:500;color:#f87171}
+.go-sub{font-size:15px;color:#c4b5fd}
+.go-num{font-size:48px;font-weight:500;color:#ffb347}
 
-  input[type=range] {
-    accent-color: #d05818;
-  }
+.win-wrap{
+  position:absolute;inset:0;z-index:10;
+  background:rgba(5,20,10,0.92);
+  border-radius:24px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;
+  animation:slideIn 0.4s ease;
+}
+.win-title{font-size:32px;font-weight:500;background:linear-gradient(135deg,#4ade80,#67e8f9);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.win-score{font-size:20px;color:#a7f3d0;font-weight:500}
 </style>
 
-<h2 class="sr-only" style="position:absolute;left:-9999px">Teddy Bear Guess the Number Game — pick a number between 1 and 10</h2>
+<h2 style="position:absolute;left:-9999px">Teddy bear guess the number game — pick 1 to 10</h2>
 
-<div class="game-root" id="gameRoot">
+<div class="game" id="game">
 
-  <svg class="bg-stars" viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <g fill="#f5c842" opacity="0.25">
-      <circle cx="30" cy="40" r="4"/><circle cx="370" cy="60" r="3"/>
-      <circle cx="60" cy="200" r="3"/><circle cx="350" cy="180" r="5"/>
-      <circle cx="20" cy="350" r="4"/><circle cx="380" cy="400" r="3"/>
-      <circle cx="90" cy="460" r="3"/><circle cx="310" cy="470" r="4"/>
-      <polygon points="200,20 202,26 208,26 203,30 205,36 200,32 195,36 197,30 192,26 198,26" opacity="0.5"/>
-      <polygon points="50,130 52,136 58,136 53,140 55,146 50,142 45,146 47,140 42,136 48,136" opacity="0.4"/>
-      <polygon points="340,280 342,286 348,286 343,290 345,296 340,292 335,296 337,290 332,286 338,286" opacity="0.4"/>
-    </g>
-  </svg>
-
-  <div class="game-title">Guess The Number</div>
-  <div class="game-subtitle" id="rangeLabel">Pick a number between 1 and 10</div>
-
-  <div class="teddy-wrap">
-    <svg id="teddySvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Teddy bear mascot">
-      <!-- ears -->
-      <circle cx="28" cy="28" r="14" fill="#c87941"/>
-      <circle cx="72" cy="28" r="14" fill="#c87941"/>
-      <circle cx="28" cy="28" r="8" fill="#e8a060"/>
-      <circle cx="72" cy="28" r="8" fill="#e8a060"/>
-      <!-- body -->
-      <ellipse cx="50" cy="70" rx="26" ry="24" fill="#c87941"/>
-      <!-- head -->
-      <circle cx="50" cy="45" r="26" fill="#d4924d"/>
-      <!-- face details -->
-      <ellipse cx="50" cy="52" rx="12" ry="9" fill="#e8a060"/>
-      <!-- eyes -->
-      <circle cx="42" cy="40" r="4" fill="#3a1800"/>
-      <circle cx="58" cy="40" r="4" fill="#3a1800"/>
-      <circle cx="43.5" cy="38.5" r="1.5" fill="white"/>
-      <circle cx="59.5" cy="38.5" r="1.5" fill="white"/>
-      <!-- nose -->
-      <ellipse cx="50" cy="49" rx="4" ry="2.5" fill="#7a3a00"/>
-      <!-- mouth (neutral) -->
-      <path id="bearMouth" d="M45 54 Q50 58 55 54" stroke="#7a3a00" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <!-- tummy -->
-      <ellipse cx="50" cy="73" rx="14" ry="12" fill="#e8a060"/>
-      <!-- paws -->
-      <ellipse cx="28" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(-20,28,80)"/>
-      <ellipse cx="72" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(20,72,80)"/>
-      <!-- bow tie -->
-      <polygon points="44,62 50,66 56,62 50,58" fill="#e84040"/>
-      <circle cx="50" cy="62" r="2.5" fill="#c02020"/>
+  <div class="bg-orbs" id="bgOrbs">
+    <svg width="100%" height="100%" viewBox="0 0 680 640" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <circle cx="80" cy="100" r="120" fill="#4c1d95" opacity="0.35"/>
+      <circle cx="600" cy="80" r="90" fill="#0e7490" opacity="0.3"/>
+      <circle cx="640" cy="520" r="110" fill="#7c3aed" opacity="0.25"/>
+      <circle cx="40" cy="500" r="80" fill="#be185d" opacity="0.2"/>
+      <circle cx="340" cy="60" r="60" fill="#d97706" opacity="0.15"/>
+      <circle cx="340" cy="580" r="70" fill="#065f46" opacity="0.2"/>
+      <polygon points="100,30 108,52 132,52 113,66 120,88 100,74 80,88 87,66 68,52 92,52" fill="#fbbf24" opacity="0.18"/>
+      <polygon points="560,160 566,178 585,178 570,189 576,207 560,196 544,207 550,189 535,178 554,178" fill="#818cf8" opacity="0.2"/>
+      <polygon points="60,350 65,365 82,365 69,375 74,390 60,380 46,390 51,375 38,365 55,365" fill="#34d399" opacity="0.18"/>
+      <polygon points="620,320 625,335 642,335 629,345 634,360 620,350 606,360 611,345 598,335 615,335" fill="#f472b6" opacity="0.2"/>
+      <circle cx="200" cy="600" r="4" fill="#a78bfa" opacity="0.5"/>
+      <circle cx="480" cy="30" r="3" fill="#67e8f9" opacity="0.5"/>
+      <circle cx="580" cy="600" r="5" fill="#fbbf24" opacity="0.4"/>
+      <circle cx="30" cy="240" r="3" fill="#f9a8d4" opacity="0.5"/>
     </svg>
   </div>
 
-  <div class="hint-badge" id="hintBadge">What's my secret number?</div>
-
-  <div class="controls">
-    <input type="number" id="guessInput" min="1" max="10" placeholder="?" />
-    <button class="btn-check" id="btnCheck" onclick="checkGuess()">Check</button>
+  <div class="title-wrap">
+    <div class="game-title">Guess The Number</div>
+    <div class="game-sub">I'm thinking of a number between 1 and 10...</div>
   </div>
 
-  <div class="result-msg neutral" id="resultMsg">Make your guess above!</div>
-
-  <div class="score-row">
-    <div class="score-pill">Score: <span id="scoreNum">10</span></div>
-    <div class="hearts" id="heartsDisplay">♥♥♥♥♥♥♥♥♥♥</div>
+  <div class="number-track" id="numTrack">
   </div>
 
-  <button class="btn-restart" onclick="restartGame()">New Game</button>
-
-  <div class="game-over-overlay" id="gameOverOverlay" style="display:none">
-    <svg viewBox="0 0 100 100" width="90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <circle cx="28" cy="28" r="14" fill="#c87941"/>
-      <circle cx="72" cy="28" r="14" fill="#c87941"/>
-      <circle cx="28" cy="28" r="8" fill="#e8a060"/>
-      <circle cx="72" cy="28" r="8" fill="#e8a060"/>
-      <ellipse cx="50" cy="70" rx="26" ry="24" fill="#c87941"/>
-      <circle cx="50" cy="45" r="26" fill="#d4924d"/>
-      <ellipse cx="50" cy="52" rx="12" ry="9" fill="#e8a060"/>
-      <line x1="39" y1="37" x2="45" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="45" y1="37" x2="39" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="55" y1="37" x2="61" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
-      <line x1="61" y1="37" x2="55" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
-      <ellipse cx="50" cy="49" rx="4" ry="2.5" fill="#7a3a00"/>
-      <path d="M45 57 Q50 53 55 57" stroke="#7a3a00" stroke-width="2" fill="none" stroke-linecap="round"/>
-      <ellipse cx="50" cy="73" rx="14" ry="12" fill="#e8a060"/>
-      <ellipse cx="28" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(-20,28,80)"/>
-      <ellipse cx="72" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(20,72,80)"/>
-      <polygon points="44,62 50,66 56,62 50,58" fill="#e84040"/>
-      <circle cx="50" cy="62" r="2.5" fill="#c02020"/>
+  <div class="teddy-stage" id="teddyStage">
+    <svg id="teddySvg" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="160" height="160" aria-label="Teddy bear mascot">
+      <defs>
+        <radialGradient id="furGrad" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stop-color="#e8924a"/>
+          <stop offset="100%" stop-color="#a0521a"/>
+        </radialGradient>
+        <radialGradient id="bellyGrad" cx="50%" cy="40%" r="60%">
+          <stop offset="0%" stop-color="#f9c98a"/>
+          <stop offset="100%" stop-color="#d4844a"/>
+        </radialGradient>
+      </defs>
+      <circle cx="30" cy="30" r="17" fill="url(#furGrad)"/>
+      <circle cx="90" cy="30" r="17" fill="url(#furGrad)"/>
+      <circle cx="30" cy="30" r="10" fill="#d4844a"/>
+      <circle cx="90" cy="30" r="10" fill="#d4844a"/>
+      <ellipse cx="60" cy="80" rx="32" ry="30" fill="url(#furGrad)"/>
+      <circle cx="60" cy="52" r="32" fill="url(#furGrad)"/>
+      <ellipse cx="60" cy="60" rx="16" ry="12" fill="url(#bellyGrad)"/>
+      <ellipse cx="60" cy="57" rx="10" ry="7" fill="#f9c98a" opacity="0.6"/>
+      <circle cx="49" cy="45" r="5.5" fill="#1a0a2e"/>
+      <circle cx="71" cy="45" r="5.5" fill="#1a0a2e"/>
+      <circle cx="50.5" cy="43.5" r="2" fill="white"/>
+      <circle cx="72.5" cy="43.5" r="2" fill="white"/>
+      <ellipse id="nose" cx="60" cy="55" rx="5" ry="3.5" fill="#5a2010"/>
+      <path id="mouth" d="M52 61 Q60 68 68 61" stroke="#5a2010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="42" cy="51" rx="5" ry="3" fill="#e8607a" opacity="0.5"/>
+      <ellipse cx="78" cy="51" rx="5" ry="3" fill="#e8607a" opacity="0.5"/>
+      <ellipse cx="35" cy="92" rx="12" ry="9" fill="#b86020" transform="rotate(-15,35,92)"/>
+      <ellipse cx="85" cy="92" rx="12" ry="9" fill="#b86020" transform="rotate(15,85,92)"/>
+      <ellipse cx="60" cy="83" rx="18" ry="13" fill="url(#bellyGrad)"/>
+      <polygon points="52,70 60,76 68,70 60,64" fill="#e84080"/>
+      <circle cx="60" cy="70" r="3.5" fill="#b01050"/>
+      <circle cx="55" cy="71" r="1.5" fill="#ff80b0"/>
     </svg>
-    <div class="game-over-title" id="gameOverTitle">Game Over!</div>
-    <div class="game-over-sub" id="gameOverSub">The number was <strong id="revealNum"></strong></div>
-    <button class="btn-check" onclick="restartGame()" style="margin-top:0.5rem">Play Again</button>
   </div>
 
+  <div class="speech-bubble" id="bubble">What number am I thinking of?</div>
+
+  <div class="input-row">
+    <input class="guess-input" id="guessIn" type="number" min="1" max="10" placeholder="?"/>
+    <button class="btn-check" id="btnCheck" onclick="doGuess()">Guess!</button>
+  </div>
+
+  <div class="result-banner info" id="resultBanner">Type a number and press Guess!</div>
+
+  <div class="lives-bar" id="livesBar"></div>
+
+  <div class="stats-row">
+    <div class="stat-pill">Score <span class="stat-val" id="scoreVal">10</span></div>
+    <div class="stat-pill">Tries <span class="stat-val" id="triesVal">0</span></div>
+    <div class="stat-pill">Best <span class="stat-val" id="bestVal">--</span></div>
+  </div>
+
+  <div class="number-track" id="numTrackBottom"></div>
+
+  <button class="btn-new" onclick="newGame()">New Game</button>
+
+  <div class="game-over-wrap" id="gameOverWrap" style="display:none">
+    <svg viewBox="0 0 120 120" width="110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="30" cy="30" r="17" fill="#a0521a"/><circle cx="90" cy="30" r="17" fill="#a0521a"/>
+      <circle cx="30" cy="30" r="10" fill="#c47040"/><circle cx="90" cy="30" r="10" fill="#c47040"/>
+      <ellipse cx="60" cy="80" rx="32" ry="30" fill="#a0521a"/>
+      <circle cx="60" cy="52" r="32" fill="#c47040"/>
+      <ellipse cx="60" cy="60" rx="16" ry="12" fill="#e8a060"/>
+      <line x1="44" y1="40" x2="54" y2="50" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <line x1="54" y1="40" x2="44" y2="50" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <line x1="66" y1="40" x2="76" y2="50" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <line x1="76" y1="40" x2="66" y2="50" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+      <ellipse cx="60" cy="55" rx="5" ry="3.5" fill="#5a2010"/>
+      <path d="M52 65 Q60 58 68 65" stroke="#5a2010" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="60" cy="83" rx="18" ry="13" fill="#e8a060"/>
+      <polygon points="52,70 60,76 68,70 60,64" fill="#e84080"/>
+    </svg>
+    <div class="go-title">Game Over!</div>
+    <div class="go-sub">The secret number was</div>
+    <div class="go-num" id="revealNum">?</div>
+    <button class="btn-check" onclick="newGame()" style="animation:none">Play Again</button>
+  </div>
+
+  <div class="win-wrap" id="winWrap" style="display:none">
+    <div style="font-size:52px;animation:spin 1s linear infinite;display:inline-block" aria-hidden="true">
+      <svg viewBox="0 0 60 60" width="60" xmlns="http://www.w3.org/2000/svg"><polygon points="30,4 36,22 56,22 40,34 46,52 30,40 14,52 20,34 4,22 24,22" fill="#fbbf24"/></svg>
+    </div>
+    <div class="win-title">You Got It!</div>
+    <div class="win-score" id="winScore">Score: 10</div>
+    <div style="color:#6ee7b7;font-size:14px" id="winMsg">Amazing guess!</div>
+    <button class="btn-check" onclick="newGame()" style="animation:none;margin-top:4px">Play Again</button>
+  </div>
 </div>
 
 <script>
-  var secret = Math.floor(Math.random() * 10) + 1;
-  var score = 10;
-  var won = false;
+var secret, score, tries, best, won, cells;
+var CONFETTI_COLORS = ['#ff6ec7','#ffb347','#67e8f9','#4ade80','#a78bfa','#f87171','#fbbf24','#34d399'];
 
-  function setMouth(type) {
-    var m = document.getElementById('bearMouth');
-    if (type === 'happy') m.setAttribute('d', 'M43 53 Q50 60 57 53');
-    else if (type === 'sad') m.setAttribute('d', 'M43 58 Q50 52 57 58');
-    else m.setAttribute('d', 'M45 54 Q50 58 55 54');
+function init(){
+  secret = Math.floor(Math.random()*10)+1;
+  score = 10; tries = 0; won = false;
+  if(best===undefined) best = null;
+
+  document.getElementById('gameOverWrap').style.display='none';
+  document.getElementById('winWrap').style.display='none';
+  document.getElementById('guessIn').disabled=false;
+  document.getElementById('btnCheck').disabled=false;
+  document.getElementById('guessIn').value='';
+  document.getElementById('resultBanner').textContent='Type a number and press Guess!';
+  document.getElementById('resultBanner').className='result-banner info';
+  document.getElementById('bubble').textContent="What number am I thinking of?";
+  document.getElementById('scoreVal').textContent=score;
+  document.getElementById('triesVal').textContent=tries;
+  document.getElementById('bestVal').textContent=best===null?'--':best;
+  setMouth('smile');
+
+  var track = document.getElementById('numTrack');
+  var track2 = document.getElementById('numTrackBottom');
+  track.innerHTML=''; track2.innerHTML='';
+  cells=[];
+  for(var i=1;i<=10;i++){
+    var d=document.createElement('div');
+    d.className='num-cell'; d.textContent=i; d.id='nc'+i;
+    track.appendChild(d);
+    cells.push(d);
   }
 
-  function animateTeddy(type) {
-    var svg = document.getElementById('teddySvg');
-    svg.classList.remove('teddy-bounce','teddy-shake','teddy-pop');
-    void svg.offsetWidth;
-    if (type === 'bounce') { svg.classList.add('teddy-bounce'); setMouth('happy'); }
-    else if (type === 'shake') { svg.classList.add('teddy-shake'); setMouth('sad'); }
-    else if (type === 'idle') { setMouth('neutral'); }
+  var bar=document.getElementById('livesBar'); bar.innerHTML='';
+  for(var j=0;j<10;j++){
+    var h=document.createElement('div');
+    h.className='life-dot alive'; h.id='hrt'+j;
+    h.innerHTML='<svg viewBox="0 0 20 20" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M10 17s-7-4.9-7-9a4 4 0 018 0 4 4 0 018 0c0 4.1-7 9-7 9z" fill="#f87171"/></svg>';
+    bar.appendChild(h);
   }
 
-  function updateHearts() {
-    var h = '';
-    for (var i = 0; i < score; i++) h += '♥';
-    for (var j = score; j < 10; j++) h += '♡';
-    document.getElementById('heartsDisplay').textContent = h;
+  var ts=document.getElementById('teddyStage');
+  ts.className='teddy-stage';
+}
+
+function setMouth(type){
+  var m=document.getElementById('mouth');
+  if(type==='smile') m.setAttribute('d','M52 61 Q60 68 68 61');
+  else if(type==='sad') m.setAttribute('d','M52 67 Q60 60 68 67');
+  else if(type==='open') m.setAttribute('d','M52 60 Q60 70 68 60');
+}
+
+function doGuess(){
+  if(won) return;
+  var inp=document.getElementById('guessIn');
+  var v=parseInt(inp.value,10);
+  if(isNaN(v)||v<1||v>10){
+    document.getElementById('bubble').textContent='Please enter 1 to 10!';
+    return;
   }
 
-  function checkGuess() {
-    if (won) return;
-    var input = document.getElementById('guessInput');
-    var val = parseInt(input.value, 10);
-    if (isNaN(val) || val < 1 || val > 10) {
-      document.getElementById('hintBadge').textContent = 'Enter a number between 1 and 10!';
-      return;
-    }
-    var result = document.getElementById('resultMsg');
-    var hint = document.getElementById('hintBadge');
+  tries++;
+  document.getElementById('triesVal').textContent=tries;
 
-    if (val === secret) {
-      won = true;
-      result.textContent = 'Correct! You got it!';
-      result.className = 'result-msg right';
-      hint.textContent = 'The number was ' + secret + '!';
-      animateTeddy('bounce');
-      document.getElementById('btnCheck').disabled = true;
-      input.disabled = true;
+  var ts=document.getElementById('teddyStage');
+  var rb=document.getElementById('resultBanner');
+  var bub=document.getElementById('bubble');
+  var cell=document.getElementById('nc'+v);
+
+  if(v===secret){
+    won=true;
+    if(best===null||score>best) best=score;
+    document.getElementById('bestVal').textContent=best;
+    setMouth('open');
+    ts.className='teddy-stage pop';
+    rb.textContent='Correct! You nailed it!'; rb.className='result-banner correct';
+    bub.textContent='YAY! That\'s my number!';
+    cell.className='num-cell';
+    cell.style.background='#065f46'; cell.style.borderColor='#4ade80'; cell.style.color='#4ade80';
+    setTimeout(function(){
+      spawnConfetti(40);
+      document.getElementById('winWrap').style.display='flex';
+      document.getElementById('winScore').textContent='Score: '+score+' pts';
+      document.getElementById('winMsg').textContent=tries===1?'First try — genius!':tries<=3?'Superb guessing!':'Well done!';
+    },600);
+    document.getElementById('guessIn').disabled=true;
+    document.getElementById('btnCheck').disabled=true;
+  } else {
+    score=Math.max(0,score-1);
+    document.getElementById('scoreVal').textContent=score;
+
+    var dead=document.getElementById('hrt'+(score));
+    if(dead){ dead.className='life-dot dead'; dead.innerHTML='<svg viewBox="0 0 20 20" width="18" xmlns="http://www.w3.org/2000/svg"><path d="M10 17s-7-4.9-7-9a4 4 0 018 0 4 4 0 018 0c0 4.1-7 9-7 9z" fill="#3b1a3b"/></svg>'; }
+
+    ts.className='teddy-shake'; 
+    setTimeout(function(){ts.className='teddy-stage'},600);
+
+    if(v<secret){
+      cell.className='num-cell low';
+      rb.textContent='Too low! Go higher!'; rb.className='result-banner wrong';
+      bub.textContent='Nope! Think bigger!';
+      for(var i=1;i<v;i++){ var c=document.getElementById('nc'+i); if(c&&c.className==='num-cell low') {} else if(c) c.className='num-cell used'; }
+      document.getElementById('nc'+v).style.borderColor='#7c3aed';
+      setMouth('sad');
     } else {
-      score = Math.max(0, score - 1);
-      document.getElementById('scoreNum').textContent = score;
-      updateHearts();
-      result.className = 'result-msg wrong';
-      animateTeddy('shake');
-
-      if (score === 0) {
-        document.getElementById('revealNum').textContent = secret;
-        document.getElementById('gameOverOverlay').style.display = 'flex';
-        return;
-      }
-
-      if (val < secret) {
-        result.textContent = 'Too low! Try higher.';
-        hint.textContent = 'Go higher than ' + val + '!';
-      } else {
-        result.textContent = 'Too high! Try lower.';
-        hint.textContent = 'Go lower than ' + val + '!';
-      }
-
-      setTimeout(function() { animateTeddy('idle'); }, 900);
+      cell.className='num-cell high';
+      rb.textContent='Too high! Go lower!'; rb.className='result-banner wrong';
+      bub.textContent='Too big! Try smaller!';
+      for(var j=v+1;j<=10;j++){ var c2=document.getElementById('nc'+j); if(c2) c2.className='num-cell used'; }
+      document.getElementById('nc'+v).style.borderColor='#0891b2';
+      setMouth('sad');
     }
-    input.value = '';
-    input.focus();
+
+    if(score===0){
+      setTimeout(function(){
+        document.getElementById('revealNum').textContent=secret;
+        document.getElementById('gameOverWrap').style.display='flex';
+      },800);
+      document.getElementById('guessIn').disabled=true;
+      document.getElementById('btnCheck').disabled=true;
+    } else {
+      setTimeout(function(){setMouth('smile')},700);
+    }
   }
+  inp.value='';
+  inp.focus();
+}
 
-  function restartGame() {
-    secret = Math.floor(Math.random() * 10) + 1;
-    score = 10;
-    won = false;
-    document.getElementById('scoreNum').textContent = 10;
-    updateHearts();
-    document.getElementById('resultMsg').textContent = 'Make your guess above!';
-    document.getElementById('resultMsg').className = 'result-msg neutral';
-    document.getElementById('hintBadge').textContent = "What's my secret number?";
-    document.getElementById('guessInput').value = '';
-    document.getElementById('guessInput').disabled = false;
-    document.getElementById('btnCheck').disabled = false;
-    document.getElementById('gameOverOverlay').style.display = 'none';
-    animateTeddy('idle');
+function spawnConfetti(n){
+  var game=document.getElementById('game');
+  for(var i=0;i<n;i++){
+    (function(i){
+      setTimeout(function(){
+        var el=document.createElement('div');
+        el.className='confetti-piece';
+        el.style.left=Math.random()*100+'%';
+        el.style.top=Math.random()*20+'%';
+        el.style.background=CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)];
+        el.style.width=(6+Math.random()*8)+'px';
+        el.style.height=(6+Math.random()*8)+'px';
+        el.style.borderRadius=Math.random()>0.5?'50%':'3px';
+        el.style.animationDuration=(0.8+Math.random()*0.8)+'s';
+        el.style.animationDelay=(Math.random()*0.4)+'s';
+        game.appendChild(el);
+        setTimeout(function(){el.remove()},1600);
+      },i*30);
+    })(i);
   }
+}
 
-  document.getElementById('guessInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') checkGuess();
-  });
+function newGame(){ init(); }
 
-  updateHearts();
+document.addEventListener('DOMContentLoaded',function(){
+  document.getElementById('guessIn').addEventListener('keydown',function(e){if(e.key==='Enter') doGuess();});
+});
+
+init();
+document.getElementById('guessIn').addEventListener('keydown',function(e){if(e.key==='Enter') doGuess();});
 </script>
