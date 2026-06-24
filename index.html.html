@@ -1,0 +1,318 @@
+
+<style>
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.18)} 100%{transform:scale(1)} }
+  @keyframes star-spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+  @keyframes fade-in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body, .game-root { font-family: var(--font-sans); }
+
+  .game-root {
+    min-height: 520px;
+    background: linear-gradient(145deg, #fff4e6 0%, #ffe8cc 60%, #ffd6a5 100%);
+    border-radius: var(--border-radius-lg);
+    padding: 2rem 1.5rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .bg-stars {
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  }
+
+  .game-title {
+    font-size: 26px; font-weight: 500;
+    color: #7a3e00;
+    letter-spacing: -0.3px;
+    z-index: 1;
+    text-align: center;
+  }
+  .game-subtitle {
+    font-size: 13px; color: #b06020; z-index: 1; text-align: center; margin-top: -0.7rem;
+  }
+
+  .teddy-wrap {
+    z-index: 1;
+    width: 130px; height: 130px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .teddy-wrap svg { width: 130px; height: 130px; }
+  .teddy-bounce { animation: bounce 1.2s ease-in-out infinite; }
+  .teddy-shake { animation: shake 0.4s ease-in-out 2; }
+  .teddy-pop { animation: pop 0.5s ease-in-out; }
+
+  .hint-badge {
+    background: #fff3cd; border: 1px solid #f5c842;
+    border-radius: 20px; padding: 5px 16px;
+    font-size: 13px; color: #7a5c00; z-index: 1;
+    min-height: 30px; display: flex; align-items: center; justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .controls {
+    display: flex; gap: 10px; align-items: center; z-index: 1;
+  }
+
+  .controls input[type=number] {
+    width: 80px; height: 44px; border-radius: 12px;
+    border: 2px solid #e8a050; background: #fff;
+    text-align: center; font-size: 22px; font-weight: 500; color: #7a3e00;
+    outline: none; transition: border-color 0.2s;
+  }
+  .controls input[type=number]:focus { border-color: #c05010; }
+  .controls input[type=number]::-webkit-inner-spin-button,
+  .controls input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+  .btn-check {
+    height: 44px; padding: 0 22px; border-radius: 12px;
+    background: #d05818; border: none; color: #fff;
+    font-size: 15px; font-weight: 500; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-check:hover { background: #b04410; }
+  .btn-check:active { transform: scale(0.97); }
+  .btn-check:disabled { background: #c8a080; cursor: default; }
+
+  .result-msg {
+    font-size: 18px; font-weight: 500; z-index: 1;
+    min-height: 26px; text-align: center;
+    animation: fade-in 0.3s ease;
+  }
+  .result-msg.right { color: #2a7a2a; }
+  .result-msg.wrong { color: #b02020; }
+  .result-msg.neutral { color: #7a3e00; }
+
+  .score-row {
+    display: flex; gap: 16px; z-index: 1; align-items: center;
+  }
+  .score-pill {
+    background: #fff3; border: 1.5px solid #e8a050;
+    border-radius: 20px; padding: 4px 18px;
+    font-size: 14px; font-weight: 500; color: #7a3e00;
+  }
+  .hearts { font-size: 18px; letter-spacing: 2px; }
+
+  .btn-restart {
+    height: 38px; padding: 0 20px; border-radius: 10px;
+    background: transparent; border: 1.5px solid #c05010;
+    color: #c05010; font-size: 14px; cursor: pointer; z-index: 1;
+    transition: all 0.15s;
+  }
+  .btn-restart:hover { background: #c05010; color: #fff; }
+
+  .game-over-overlay {
+    position: absolute; inset: 0; z-index: 10;
+    background: rgba(250,230,200,0.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1rem; border-radius: var(--border-radius-lg);
+    animation: fade-in 0.4s ease;
+  }
+  .game-over-title { font-size: 28px; font-weight: 500; color: #7a3e00; }
+  .game-over-sub { font-size: 15px; color: #b06020; }
+
+  .range-label { font-size: 12px; color: #b06020; z-index: 1; }
+
+  input[type=range] {
+    accent-color: #d05818;
+  }
+</style>
+
+<h2 class="sr-only" style="position:absolute;left:-9999px">Teddy Bear Guess the Number Game — pick a number between 1 and 10</h2>
+
+<div class="game-root" id="gameRoot">
+
+  <svg class="bg-stars" viewBox="0 0 400 520" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <g fill="#f5c842" opacity="0.25">
+      <circle cx="30" cy="40" r="4"/><circle cx="370" cy="60" r="3"/>
+      <circle cx="60" cy="200" r="3"/><circle cx="350" cy="180" r="5"/>
+      <circle cx="20" cy="350" r="4"/><circle cx="380" cy="400" r="3"/>
+      <circle cx="90" cy="460" r="3"/><circle cx="310" cy="470" r="4"/>
+      <polygon points="200,20 202,26 208,26 203,30 205,36 200,32 195,36 197,30 192,26 198,26" opacity="0.5"/>
+      <polygon points="50,130 52,136 58,136 53,140 55,146 50,142 45,146 47,140 42,136 48,136" opacity="0.4"/>
+      <polygon points="340,280 342,286 348,286 343,290 345,296 340,292 335,296 337,290 332,286 338,286" opacity="0.4"/>
+    </g>
+  </svg>
+
+  <div class="game-title">Guess The Number</div>
+  <div class="game-subtitle" id="rangeLabel">Pick a number between 1 and 10</div>
+
+  <div class="teddy-wrap">
+    <svg id="teddySvg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Teddy bear mascot">
+      <!-- ears -->
+      <circle cx="28" cy="28" r="14" fill="#c87941"/>
+      <circle cx="72" cy="28" r="14" fill="#c87941"/>
+      <circle cx="28" cy="28" r="8" fill="#e8a060"/>
+      <circle cx="72" cy="28" r="8" fill="#e8a060"/>
+      <!-- body -->
+      <ellipse cx="50" cy="70" rx="26" ry="24" fill="#c87941"/>
+      <!-- head -->
+      <circle cx="50" cy="45" r="26" fill="#d4924d"/>
+      <!-- face details -->
+      <ellipse cx="50" cy="52" rx="12" ry="9" fill="#e8a060"/>
+      <!-- eyes -->
+      <circle cx="42" cy="40" r="4" fill="#3a1800"/>
+      <circle cx="58" cy="40" r="4" fill="#3a1800"/>
+      <circle cx="43.5" cy="38.5" r="1.5" fill="white"/>
+      <circle cx="59.5" cy="38.5" r="1.5" fill="white"/>
+      <!-- nose -->
+      <ellipse cx="50" cy="49" rx="4" ry="2.5" fill="#7a3a00"/>
+      <!-- mouth (neutral) -->
+      <path id="bearMouth" d="M45 54 Q50 58 55 54" stroke="#7a3a00" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <!-- tummy -->
+      <ellipse cx="50" cy="73" rx="14" ry="12" fill="#e8a060"/>
+      <!-- paws -->
+      <ellipse cx="28" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(-20,28,80)"/>
+      <ellipse cx="72" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(20,72,80)"/>
+      <!-- bow tie -->
+      <polygon points="44,62 50,66 56,62 50,58" fill="#e84040"/>
+      <circle cx="50" cy="62" r="2.5" fill="#c02020"/>
+    </svg>
+  </div>
+
+  <div class="hint-badge" id="hintBadge">What's my secret number?</div>
+
+  <div class="controls">
+    <input type="number" id="guessInput" min="1" max="10" placeholder="?" />
+    <button class="btn-check" id="btnCheck" onclick="checkGuess()">Check</button>
+  </div>
+
+  <div class="result-msg neutral" id="resultMsg">Make your guess above!</div>
+
+  <div class="score-row">
+    <div class="score-pill">Score: <span id="scoreNum">10</span></div>
+    <div class="hearts" id="heartsDisplay">♥♥♥♥♥♥♥♥♥♥</div>
+  </div>
+
+  <button class="btn-restart" onclick="restartGame()">New Game</button>
+
+  <div class="game-over-overlay" id="gameOverOverlay" style="display:none">
+    <svg viewBox="0 0 100 100" width="90" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="28" cy="28" r="14" fill="#c87941"/>
+      <circle cx="72" cy="28" r="14" fill="#c87941"/>
+      <circle cx="28" cy="28" r="8" fill="#e8a060"/>
+      <circle cx="72" cy="28" r="8" fill="#e8a060"/>
+      <ellipse cx="50" cy="70" rx="26" ry="24" fill="#c87941"/>
+      <circle cx="50" cy="45" r="26" fill="#d4924d"/>
+      <ellipse cx="50" cy="52" rx="12" ry="9" fill="#e8a060"/>
+      <line x1="39" y1="37" x2="45" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="45" y1="37" x2="39" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="55" y1="37" x2="61" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="61" y1="37" x2="55" y2="43" stroke="#3a1800" stroke-width="2.5" stroke-linecap="round"/>
+      <ellipse cx="50" cy="49" rx="4" ry="2.5" fill="#7a3a00"/>
+      <path d="M45 57 Q50 53 55 57" stroke="#7a3a00" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <ellipse cx="50" cy="73" rx="14" ry="12" fill="#e8a060"/>
+      <ellipse cx="28" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(-20,28,80)"/>
+      <ellipse cx="72" cy="80" rx="9" ry="7" fill="#c87941" transform="rotate(20,72,80)"/>
+      <polygon points="44,62 50,66 56,62 50,58" fill="#e84040"/>
+      <circle cx="50" cy="62" r="2.5" fill="#c02020"/>
+    </svg>
+    <div class="game-over-title" id="gameOverTitle">Game Over!</div>
+    <div class="game-over-sub" id="gameOverSub">The number was <strong id="revealNum"></strong></div>
+    <button class="btn-check" onclick="restartGame()" style="margin-top:0.5rem">Play Again</button>
+  </div>
+
+</div>
+
+<script>
+  var secret = Math.floor(Math.random() * 10) + 1;
+  var score = 10;
+  var won = false;
+
+  function setMouth(type) {
+    var m = document.getElementById('bearMouth');
+    if (type === 'happy') m.setAttribute('d', 'M43 53 Q50 60 57 53');
+    else if (type === 'sad') m.setAttribute('d', 'M43 58 Q50 52 57 58');
+    else m.setAttribute('d', 'M45 54 Q50 58 55 54');
+  }
+
+  function animateTeddy(type) {
+    var svg = document.getElementById('teddySvg');
+    svg.classList.remove('teddy-bounce','teddy-shake','teddy-pop');
+    void svg.offsetWidth;
+    if (type === 'bounce') { svg.classList.add('teddy-bounce'); setMouth('happy'); }
+    else if (type === 'shake') { svg.classList.add('teddy-shake'); setMouth('sad'); }
+    else if (type === 'idle') { setMouth('neutral'); }
+  }
+
+  function updateHearts() {
+    var h = '';
+    for (var i = 0; i < score; i++) h += '♥';
+    for (var j = score; j < 10; j++) h += '♡';
+    document.getElementById('heartsDisplay').textContent = h;
+  }
+
+  function checkGuess() {
+    if (won) return;
+    var input = document.getElementById('guessInput');
+    var val = parseInt(input.value, 10);
+    if (isNaN(val) || val < 1 || val > 10) {
+      document.getElementById('hintBadge').textContent = 'Enter a number between 1 and 10!';
+      return;
+    }
+    var result = document.getElementById('resultMsg');
+    var hint = document.getElementById('hintBadge');
+
+    if (val === secret) {
+      won = true;
+      result.textContent = 'Correct! You got it!';
+      result.className = 'result-msg right';
+      hint.textContent = 'The number was ' + secret + '!';
+      animateTeddy('bounce');
+      document.getElementById('btnCheck').disabled = true;
+      input.disabled = true;
+    } else {
+      score = Math.max(0, score - 1);
+      document.getElementById('scoreNum').textContent = score;
+      updateHearts();
+      result.className = 'result-msg wrong';
+      animateTeddy('shake');
+
+      if (score === 0) {
+        document.getElementById('revealNum').textContent = secret;
+        document.getElementById('gameOverOverlay').style.display = 'flex';
+        return;
+      }
+
+      if (val < secret) {
+        result.textContent = 'Too low! Try higher.';
+        hint.textContent = 'Go higher than ' + val + '!';
+      } else {
+        result.textContent = 'Too high! Try lower.';
+        hint.textContent = 'Go lower than ' + val + '!';
+      }
+
+      setTimeout(function() { animateTeddy('idle'); }, 900);
+    }
+    input.value = '';
+    input.focus();
+  }
+
+  function restartGame() {
+    secret = Math.floor(Math.random() * 10) + 1;
+    score = 10;
+    won = false;
+    document.getElementById('scoreNum').textContent = 10;
+    updateHearts();
+    document.getElementById('resultMsg').textContent = 'Make your guess above!';
+    document.getElementById('resultMsg').className = 'result-msg neutral';
+    document.getElementById('hintBadge').textContent = "What's my secret number?";
+    document.getElementById('guessInput').value = '';
+    document.getElementById('guessInput').disabled = false;
+    document.getElementById('btnCheck').disabled = false;
+    document.getElementById('gameOverOverlay').style.display = 'none';
+    animateTeddy('idle');
+  }
+
+  document.getElementById('guessInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkGuess();
+  });
+
+  updateHearts();
+</script>
